@@ -1,0 +1,5 @@
+flask==3.1.1
+gunicorn==23.0.0
+requests==2.32.3
+numpy==1.26.4
+# aeneas is installed separately by install.sh (needs numpy first, setuptools<60 and --no-build-isolation)
