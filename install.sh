@@ -6,7 +6,7 @@
 #   sudo bash install.sh
 #
 # Safe to run again: it updates everything in place and restarts the service.
-# Your token and settings (.env) are kept.
+# Your settings (.env) are kept. The API token is in app/main.py (from GitHub).
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
@@ -43,20 +43,10 @@ as_user "cd '$APP_DIR' && .venv/bin/python -c 'import aeneas.cdtw, aeneas.cmfcc,
   || { echo "Aeneas fast C extensions are missing — the install did not work. See the messages above."; exit 1; }
 
 say "3/7 Settings file (.env)"
+# The API token is NOT in .env: it is hard-coded in app/main.py and comes from GitHub with every update.
 if [ ! -f "$ENV_FILE" ]; then
-  # Fixed token, the same on every VM (owner's choice). Change it per VM in .env if needed.
-  DEFAULT_TOKEN="your-secret-token-here-change-me"
-  TOKEN="${API_TOKEN:-}"
-  # Moving from the old hand-made setup? Keep its token so existing callers keep working.
-  OLD_API="$RUN_HOME/aeneas_api.py"
-  if [ -z "$TOKEN" ] && [ -f "$OLD_API" ]; then
-    TOKEN="$(grep -oP '^API_TOKEN\s*=\s*"\K[^"]+' "$OLD_API" | head -1 || true)"
-    if [ -n "$TOKEN" ]; then echo "Re-using the token from your old $OLD_API"; fi
-  fi
-  if [ -z "$TOKEN" ]; then TOKEN="$DEFAULT_TOKEN"; fi
   cat > "$ENV_FILE" <<EOF
-# Secret token(s) for POST /align. Several tokens may be separated by commas.
-API_TOKEN=$TOKEN
+# The API token is set in app/main.py (comes from GitHub), not here.
 # Port the API listens on (open it in the cloud firewall too)
 PORT=${PORT:-3100}
 # Number of requests processed at the same time (default: number of CPUs, at least 2)
@@ -71,11 +61,17 @@ EOF
   echo "Created $ENV_FILE"
 else
   echo "Keeping existing $ENV_FILE"
+  # Older installs kept a token here; it is no longer used, so remove that line (other settings stay).
+  if grep -q '^API_TOKEN=' "$ENV_FILE"; then
+    sed -i '/^# Secret token(s) for POST \/align/d; /^API_TOKEN=/d' "$ENV_FILE"
+    sed -i '1i # The API token is set in app/main.py (comes from GitHub), not here.' "$ENV_FILE"
+    echo "Removed the old token line from .env (the token now comes from GitHub)."
+  fi
 fi
 chown "$RUN_USER" "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 PORT="$(grep -oP '^PORT=\K[0-9]+' "$ENV_FILE" || echo 3100)"
-TOKEN="$(grep -oP '^API_TOKEN=\K[^,\s]+' "$ENV_FILE" || true)"
+TOKEN="$(grep -oP '^API_TOKEN = "\K[^"]+' "$APP_DIR/app/main.py" || true)"
 
 say "4/7 Retire the old hand-made service (if there is one)"
 if [ -f /etc/systemd/system/aeneas-api.service ]; then
@@ -139,7 +135,7 @@ if curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
   echo "  Health : http://$IP:$PORT/health"
   echo "  Align  : http://$IP:$PORT/align"
   echo "  Token  : $TOKEN"
-  echo "  (the token is stored in $ENV_FILE)"
+  echo "  (the token is set in $APP_DIR/app/main.py and comes from GitHub)"
   echo "Logs:  sudo journalctl -u $SERVICE -f"
 else
   echo "The service did not start. Check:  sudo journalctl -u $SERVICE -n 80"

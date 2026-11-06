@@ -25,6 +25,7 @@ sudo apt-get update -y && sudo apt-get install -y git openssh-client && mkdir -p
    (about 3–5 minutes).
 4. At the end it prints your API address and **token**. The token is the same on every VM:
    `your-secret-token-here-change-me` (send it as `Authorization: Bearer your-secret-token-here-change-me`).
+   It is set in `app/main.py`, so it comes from GitHub with every update.
 5. Allow the port (default **3100**) in your cloud firewall
    (GCP: **VPC network → Firewall → Create rule**, TCP 3100). Done.
 
@@ -38,7 +39,7 @@ sudo apt-get update -y && sudo apt-get install -y git openssh-client && mkdir -p
 ### Health check (no token)
 ```bash
 curl http://YOUR_VM_IP:3100/health
-# {"status":"ok","service":"aeneas-alignment-api","version":"1.0.1"}
+# {"status":"ok","service":"aeneas-alignment-api","version":"1.0.2"}
 ```
 
 ### Align — audio link + text (JSON)
@@ -126,7 +127,6 @@ around those words are wrong — there is no error. Fix the transcript first, th
 
 ## Settings (`.env` on the VM — never in git)
 ```
-API_TOKEN=your-secret-token-here-change-me   # several allowed, separated by commas
 PORT=3100
 # WORKERS=2            # requests processed at the same time (default = CPUs, min 2)
 MAX_AUDIO_MB=1024
@@ -135,9 +135,8 @@ DOWNLOAD_TIMEOUT=300   # seconds
 ```
 After changing it: `sudo systemctl restart aeneas-align-api`
 
-**Token:** every new install uses the fixed token `your-secret-token-here-change-me`.
-To use a different one on a VM: edit `API_TOKEN` in `~/aeneas-align-api/.env`, then restart.
-Updates never change the token in `.env`.
+**Token:** hard-coded in `app/main.py` (`API_TOKEN = "your-secret-token-here-change-me"`), the same on every VM.
+To change it: edit that line on GitHub (or ask Claude), commit, then run `aeneas-update` on each VM.
 
 ## Update
 ```bash
@@ -150,7 +149,7 @@ aeneas-update --force    # reinstall even if nothing changed
 sudo systemctl status aeneas-align-api      # running?
 sudo systemctl restart aeneas-align-api     # restart
 sudo journalctl -u aeneas-align-api -f      # live logs (every request is logged)
-cat ~/aeneas-align-api/.env                 # see your token / port
+cat ~/aeneas-align-api/.env                 # see your port / limits
 curl -s -4 ifconfig.me; echo                # the VM's public IP
 ```
 
@@ -159,7 +158,7 @@ Runs on CPU only. 1 vCPU / 1 GB RAM works; 2 vCPU / 2 GB is comfortable. A 1-min
 
 ## Where things are
 ```
-app/main.py        the API: /health, /align, token check, downloads (incl. Google Drive), uploads
+app/main.py        the API: /health, /align, the token (API_TOKEN line), token check, downloads (incl. Google Drive), uploads
 app/align.py       Aeneas alignment + timing clean-up (same logic as the Mummy Video Editor)
 install.sh         one-command installer (safe to run again)
 update.sh          aeneas-update: git pull + install.sh
@@ -171,6 +170,6 @@ docs/              Word documentation, GitHub workflow
 ```bash
 uv venv -p 3.11 .venv && uv pip install -r requirements.txt 'setuptools<60' wheel \
   && uv pip install --no-build-isolation aeneas==1.7.3.0
-API_TOKEN=test .venv/bin/python -m app.main          # http://localhost:3100
+.venv/bin/python -m app.main          # http://localhost:3100
 ```
 Needs `ffmpeg`, `espeak` and `libespeak-dev` installed (`sudo apt-get install ffmpeg espeak libespeak-dev`).

@@ -2,7 +2,8 @@
 
 The code lives in a **private** GitHub repository, branch `main`. Each VM downloads it with its own read-only
 "deploy key" and updates with one command: `aeneas-update`.
-The token and settings (`.env`) are never in git.
+The settings (`.env`: port, limits) are never in git. The API token is in `app/main.py` (in git), so a token
+change reaches every VM with `aeneas-update`.
 
 ## New VM
 Use the one-line command in `README.md`. It makes the key, waits for you to add it on GitHub, then installs.

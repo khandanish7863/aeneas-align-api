@@ -24,8 +24,13 @@ from .align import AlignError, align, audio_duration
 APP_DIR = Path(__file__).resolve().parent.parent
 VERSION = (APP_DIR / "VERSION").read_text(encoding="utf-8").strip() if (APP_DIR / "VERSION").exists() else "dev"
 
-# Settings come from .env (loaded by systemd). Several tokens may be given, separated by commas.
-API_TOKENS = [t.strip() for t in os.environ.get("API_TOKEN", "").split(",") if t.strip()]
+# --- API token -------------------------------------------------------------------------
+# Hard-coded on purpose (owner's choice): the same token on every VM, coming from GitHub.
+# To change it: edit this line, commit + push, then run  aeneas-update  on each VM.
+API_TOKEN = "your-secret-token-here-change-me"
+API_TOKENS = [API_TOKEN]
+
+# Other settings come from .env (loaded by systemd).
 MAX_AUDIO_MB = int(os.environ.get("MAX_AUDIO_MB", "1024"))
 ALIGN_TIMEOUT = int(os.environ.get("ALIGN_TIMEOUT", "1800"))
 DOWNLOAD_TIMEOUT = int(os.environ.get("DOWNLOAD_TIMEOUT", "300"))
@@ -45,8 +50,6 @@ def error(message: str, code: int):
 def require_token(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if not API_TOKENS:
-            return error("Server has no API_TOKEN set in .env", 500)
         header = request.headers.get("Authorization", "")
         given = header[7:].strip() if header.lower().startswith("bearer ") else ""
         if not given or not any(hmac.compare_digest(given, t) for t in API_TOKENS):

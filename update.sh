@@ -2,7 +2,7 @@
 # Update the Aeneas Align API from GitHub and reinstall:   aeneas-update
 # (installed as /usr/local/bin/aeneas-update by install.sh; same as:  sudo bash ~/aeneas-align-api/update.sh)
 #
-# Your token and settings (.env) are not in git and are never touched.
+# Your settings (.env) are not in git and are never touched. The API token is in app/main.py (in git).
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
