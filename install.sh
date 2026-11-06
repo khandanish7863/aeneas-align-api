@@ -44,19 +44,16 @@ as_user "cd '$APP_DIR' && .venv/bin/python -c 'import aeneas.cdtw, aeneas.cmfcc,
 
 say "3/7 Settings file (.env)"
 if [ ! -f "$ENV_FILE" ]; then
+  # Fixed token, the same on every VM (owner's choice). Change it per VM in .env if needed.
+  DEFAULT_TOKEN="your-secret-token-here-change-me"
   TOKEN="${API_TOKEN:-}"
   # Moving from the old hand-made setup? Keep its token so existing callers keep working.
   OLD_API="$RUN_HOME/aeneas_api.py"
   if [ -z "$TOKEN" ] && [ -f "$OLD_API" ]; then
     TOKEN="$(grep -oP '^API_TOKEN\s*=\s*"\K[^"]+' "$OLD_API" | head -1 || true)"
-    [ "$TOKEN" = "your-secret-token-here-change-me" ] && TOKEN=""
-    [ -n "$TOKEN" ] && echo "Re-using the token from your old $OLD_API"
+    if [ -n "$TOKEN" ]; then echo "Re-using the token from your old $OLD_API"; fi
   fi
-  NEW_TOKEN=0
-  if [ -z "$TOKEN" ]; then
-    TOKEN="$(head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 40)"
-    NEW_TOKEN=1
-  fi
+  if [ -z "$TOKEN" ]; then TOKEN="$DEFAULT_TOKEN"; fi
   cat > "$ENV_FILE" <<EOF
 # Secret token(s) for POST /align. Several tokens may be separated by commas.
 API_TOKEN=$TOKEN
@@ -71,7 +68,7 @@ ALIGN_TIMEOUT=1800
 # Stop a download that runs longer than this many seconds
 DOWNLOAD_TIMEOUT=300
 EOF
-  [ "$NEW_TOKEN" = "1" ] && echo "Created a new random token."
+  echo "Created $ENV_FILE"
 else
   echo "Keeping existing $ENV_FILE"
 fi

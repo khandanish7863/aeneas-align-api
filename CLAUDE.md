@@ -10,7 +10,8 @@
 - Aeneas install needs Python 3.11, numpy first, `setuptools<60` and `--no-build-isolation`; check that
   `aeneas.cdtw/cmfcc/cew` import (the fast C extensions).
 - `install.sh` must stay safe to run again and must never overwrite `.env`.
-- Never put the token or `.env` in the repo.
+- Token: by the owner's choice every new install uses the fixed token `your-secret-token-here-change-me`
+  (written into `.env` by install.sh). Don't change this default without asking. Never commit `.env` itself.
 - Before pushing: `bash -n install.sh update.sh`, run the API locally and align a test file (English + Hindi).
 - Deploy: commit to `main`, push, bump `VERSION`; the owner runs `aeneas-update`.
 - Commit messages: one clear line per change; give the owner plain-language instructions (he is not a developer).

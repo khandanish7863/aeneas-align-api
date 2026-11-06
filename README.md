@@ -23,7 +23,8 @@ sudo apt-get update -y && sudo apt-get install -y git openssh-client && mkdir -p
    paste the key, leave **Allow write access** off → **Add key**.
 3. The command notices the key by itself within 5 seconds, downloads the code and installs everything
    (about 3–5 minutes).
-4. At the end it prints your API address and **token**.
+4. At the end it prints your API address and **token**. The token is the same on every VM:
+   `your-secret-token-here-change-me` (send it as `Authorization: Bearer your-secret-token-here-change-me`).
 5. Allow the port (default **3100**) in your cloud firewall
    (GCP: **VPC network → Firewall → Create rule**, TCP 3100). Done.
 
@@ -37,7 +38,7 @@ sudo apt-get update -y && sudo apt-get install -y git openssh-client && mkdir -p
 ### Health check (no token)
 ```bash
 curl http://YOUR_VM_IP:3100/health
-# {"status":"ok","service":"aeneas-alignment-api","version":"1.0.0"}
+# {"status":"ok","service":"aeneas-alignment-api","version":"1.0.1"}
 ```
 
 ### Align — audio link + text (JSON)
@@ -125,7 +126,7 @@ around those words are wrong — there is no error. Fix the transcript first, th
 
 ## Settings (`.env` on the VM — never in git)
 ```
-API_TOKEN=…            # secret token; several allowed, separated by commas
+API_TOKEN=your-secret-token-here-change-me   # several allowed, separated by commas
 PORT=3100
 # WORKERS=2            # requests processed at the same time (default = CPUs, min 2)
 MAX_AUDIO_MB=1024
@@ -134,7 +135,9 @@ DOWNLOAD_TIMEOUT=300   # seconds
 ```
 After changing it: `sudo systemctl restart aeneas-align-api`
 
-**Change the token:** edit `API_TOKEN` in `~/aeneas-align-api/.env`, then restart.
+**Token:** every new install uses the fixed token `your-secret-token-here-change-me`.
+To use a different one on a VM: edit `API_TOKEN` in `~/aeneas-align-api/.env`, then restart.
+Updates never change the token in `.env`.
 
 ## Update
 ```bash
